@@ -78,6 +78,17 @@ body {
     gap: 0.85rem;
 }
 
+.brand-logo-img {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 3px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
 .brand-icon {
     width: 44px;
     height: 44px;
@@ -998,6 +1009,22 @@ textarea.form-control {
     text-align: center;
     margin-bottom: 1.75rem;
 }
+.login-logo-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 0.75rem auto;
+}
+.login-logo-img {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.12));
+    transition: transform 0.3s ease;
+}
+.login-logo-img:hover {
+    transform: scale(1.05);
+}
 .login-logo-badge {
     width: 64px;
     height: 64px;
@@ -1410,6 +1437,12 @@ textarea.form-control {
     }
     .brand-tagline {
         display: none; /* Ẩn mô tả dài trên mobile */
+    }
+    .brand-logo-img {
+        width: 36px;
+        height: 36px;
+        padding: 2px;
+        border-radius: 9px;
     }
     .brand-icon {
         width: 32px;
