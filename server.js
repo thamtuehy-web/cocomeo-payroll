@@ -119,6 +119,25 @@ function saveDB(data) {
 // API ROUTES
 // ==========================================
 
+// Đăng nhập hệ thống CocoMeo
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if ((username || '').trim().toLowerCase() === 'cocomeo' && (password || '').trim() === '12121990') {
+        const token = 'cocomeo_token_' + Buffer.from('cocomeo:' + Date.now()).toString('base64');
+        return res.json({ success: true, token, user: 'cocomeo' });
+    }
+    return res.status(401).json({ success: false, error: 'Tên đăng nhập hoặc mật khẩu không chính xác!' });
+});
+
+// Kiểm tra phiên đăng nhập
+app.get('/api/auth-check', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.includes('cocomeo_token_')) {
+        return res.json({ authenticated: true, user: 'cocomeo' });
+    }
+    return res.status(401).json({ authenticated: false });
+});
+
 // Lấy toàn bộ dữ liệu
 app.get('/api/data', (req, res) => {
     const db = loadDB();
