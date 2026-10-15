@@ -958,20 +958,428 @@ textarea.form-control {
     }
 }
 
-/* Responsive adjustments */
+/* ==========================================================================
+   MOBILE & IPHONE PWA ENHANCEMENTS
+   ========================================================================== */
+
+/* Banner cài đặt iPhone PWA */
+.ios-install-prompt {
+    position: fixed;
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1.5px solid #6366f1;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    padding: 0.75rem 1rem;
+    animation: slideDown 0.3s ease-out;
+}
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.ios-install-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.ios-install-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+.ios-install-text {
+    flex: 1;
+}
+.ios-install-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+/* Thanh điều hướng đáy Mobile (Bottom Navigation) */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(58px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+}
+.mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0.25rem 0;
+}
+.mobile-nav-btn .mobile-nav-icon {
+    font-size: 1.35rem;
+    margin-bottom: 2px;
+    transition: transform 0.15s ease;
+}
+.mobile-nav-btn.active {
+    color: #4f46e5;
+}
+.mobile-nav-btn.active .mobile-nav-icon {
+    transform: scale(1.15);
+}
+
+/* Nút chuyển đổi giao diện Thẻ / Bảng (View Mode Toggle) */
+.view-mode-toggle {
+    display: inline-flex;
+    background: #e2e8f0;
+    padding: 3px;
+    border-radius: 10px;
+    gap: 2px;
+}
+.view-toggle-btn {
+    border: none;
+    background: transparent;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 8px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.view-toggle-btn.active {
+    background: #ffffff;
+    color: #4f46e5;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Lưới Thẻ Mobile cho Bảng Lương */
+.mobile-cards-grid {
+    display: none;
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Thẻ nhân viên trên điện thoại (Mobile Payroll Card) */
+.payroll-mobile-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.payroll-mobile-card:active {
+    transform: scale(0.99);
+}
+.pmc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+.pmc-avatar-info {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+.pmc-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #ffffff;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+.pmc-avatar.cs1 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.pmc-avatar.cs2 { background: linear-gradient(135deg, #ec4899, #be185d); }
+.pmc-avatar.cs3 { background: linear-gradient(135deg, #10b981, #047857); }
+
+.pmc-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1e293b;
+}
+.pmc-sub {
+    font-size: 0.78rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Pill chuyển khoản */
+.pmc-transfer-pill {
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+}
+.pmc-transfer-pill.transferred {
+    background: #dcfce7;
+    color: #15803d;
+}
+.pmc-transfer-pill.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* 4 ô thông số chính */
+.pmc-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.45rem;
+    background: #f8fafc;
+    padding: 0.65rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+}
+.pmc-stat-item {
+    font-size: 0.78rem;
+    color: #64748b;
+}
+.pmc-stat-item strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #1e293b;
+    font-weight: 700;
+}
+
+/* Dòng Tổng Lương Nổi Bật */
+.pmc-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-top: 1px dashed #e2e8f0;
+    margin-bottom: 0.75rem;
+}
+.pmc-total-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+}
+.pmc-total-amount {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #16a34a;
+}
+
+/* Hàng nút bấm hành động */
+.pmc-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+.pmc-btn {
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s ease;
+}
+.pmc-btn:active {
+    opacity: 0.8;
+}
+.pmc-btn-qr {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #ffffff;
+}
+.pmc-btn-slip {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+
+/* Chi tiết gập mở (Accordion) */
+.pmc-details-collapse {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.8rem;
+    color: #475569;
+}
+.pmc-details-collapse summary {
+    font-size: 0.75rem;
+    color: #6366f1;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS FOR PHONES (MAX-WIDTH: 768px)
+   ========================================================================== */
 @media (max-width: 768px) {
+    /* Đảm bảo đáy trang không bị che bởi Bottom Nav */
+    body {
+        padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Hiện thanh Bottom Nav trên điện thoại */
+    .mobile-bottom-nav {
+        display: flex;
+    }
+
+    /* Ẩn bớt thanh tab trên đỉnh nếu màn hình nhỏ để tránh chiếm chỗ */
+    .nav-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    .nav-tab {
+        padding: 0.6rem 0.9rem;
+        font-size: 0.82rem;
+    }
+
+    /* Thu nhỏ Header trên điện thoại */
+    .app-header {
+        padding: 0.6rem 0.75rem;
+    }
     .header-container {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .brand-title {
+        font-size: 1.05rem;
+    }
+    .brand-tagline {
+        display: none; /* Ẩn mô tả dài trên mobile */
+    }
+    .brand-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
     }
     .header-controls {
-        width: 100%;
-        justify-content: space-between;
+        width: auto;
+        gap: 0.4rem;
     }
-    .form-grid {
+    .month-selector-box {
+        padding: 0.25rem 0.5rem;
+    }
+    .month-selector-box label {
+        display: none; /* Ẩn chữ 'KỲ LƯƠNG:' để tiết kiệm chỗ */
+    }
+    .month-selector-box select {
+        font-size: 0.82rem;
+        padding: 0.2rem 0.35rem;
+    }
+
+    /* Thu gọn lưới thống kê (Stats Grid) thành 2 cột */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    .stat-card {
+        padding: 0.75rem;
+    }
+    .stat-header span {
+        font-size: 0.75rem;
+    }
+    .stat-value {
+        font-size: 1.15rem;
+    }
+    .stat-subtext {
+        font-size: 0.68rem;
+    }
+
+    /* Thu gọn PnL các cơ sở */
+    .branch-pnl-grid {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
-    .form-group.full-width {
-        grid-column: span 1;
+    .branch-box {
+        padding: 0.75rem;
+    }
+
+    /* Mặc định trên Mobile hiện Dạng Thẻ nếu đang ở chế độ cards */
+    .mobile-cards-grid {
+        display: grid;
+    }
+    #payroll-table-card.hide-on-mobile {
+        display: none;
+    }
+
+    /* Tối ưu toolbar tìm kiếm */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.65rem;
+    }
+    .toolbar {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .search-input, .filter-select {
+        width: 100%;
+        font-size: 16px; /* Ngăn iOS Safari tự zoom khi chạm vào input */
+    }
+
+    /* Modal dạng Bottom Sheet trên điện thoại */
+    .modal.open {
+        align-items: flex-end;
+    }
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 90vh !important;
+        margin: 0 !important;
+        padding: 1.25rem !important;
+        animation: slideUpModal 0.25s ease-out;
+    }
+    @keyframes slideUpModal {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    /* Chống tràn cho Dropzone */
+    .upload-dropzone {
+        padding: 1.25rem 0.75rem;
+    }
+    .upload-title {
+        font-size: 0.95rem;
     }
 }
+
