@@ -2,8 +2,15 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CocoMeo - Hệ Thống Quản Lý Lương & Nhân Viên Tự Động</title>
+    <!-- iOS PWA Meta Tags & Manifest -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CocoMeo Lương">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -197,7 +204,15 @@
                     📋 Bảng Lương Chi Tiết Từng Nhân Viên
                 </div>
 
-                <div class="toolbar">
+                <div class="toolbar" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <div class="view-mode-toggle" id="payroll-view-toggle">
+                        <button type="button" class="view-toggle-btn active" id="btn-view-cards" onclick="setPayrollViewMode('cards')">
+                            📱 Dạng Thẻ
+                        </button>
+                        <button type="button" class="view-toggle-btn" id="btn-view-table" onclick="setPayrollViewMode('table')">
+                            📊 Dạng Bảng
+                        </button>
+                    </div>
                     <input type="text" id="payroll-search" class="search-input" placeholder="🔍 Tìm tên, mã chấm công, STK...">
                     <select id="payroll-branch-filter" class="filter-select">
                         <option value="all">Tất cả cơ sở (CS1, CS2, CS3)</option>
@@ -208,8 +223,14 @@
                 </div>
             </div>
 
-            <div class="table-card">
-                <div class="table-responsive">
+            <!-- Giao diện Dạng Thẻ Mobile (Dễ nhìn trên điện thoại iPhone) -->
+            <div id="payroll-cards-container" class="mobile-cards-grid">
+                <!-- Render bằng JS cho điện thoại -->
+            </div>
+
+            <!-- Giao diện Dạng Bảng Máy Tính (Excel) -->
+            <div class="table-card" id="payroll-table-card">
+                <div class="table-responsive" id="payroll-table-container">
                     <table class="custom-table" id="payroll-table">
                         <thead>
                             <tr>
@@ -833,6 +854,44 @@
             </form>
         </div>
     </div>
+
+    <!-- Banner Hướng Dẫn Thêm Ra Màn Hình iPhone (iOS Add to Home Screen) -->
+    <div id="ios-install-banner" class="ios-install-prompt" style="display: none;">
+        <div class="ios-install-content">
+            <div class="ios-install-icon">🐾</div>
+            <div class="ios-install-text">
+                <div style="font-weight: 700; font-size: 0.95rem; color: #1e1b4b;">📲 Cài Đặt App Ra Màn Hình iPhone:</div>
+                <div style="font-size: 0.82rem; color: #475569; margin-top: 0.2rem;">
+                    Bấm biểu tượng <strong>Chia sẻ (ô vuông có mũi tên ⬆️)</strong> ở thanh dưới Safari ➔ Chọn <strong>"Thêm vào MH chính" (Add to Home Screen)</strong>.
+                </div>
+            </div>
+            <button type="button" class="ios-install-close" onclick="dismissIosBanner()" title="Đóng">✕</button>
+        </div>
+    </div>
+
+    <!-- Thanh Điều Hướng Đáy Cho Điện Thoại (Mobile Bottom Navigation Bar) -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+        <button type="button" class="mobile-nav-btn active" data-tab="tab-payroll">
+            <span class="mobile-nav-icon">💰</span>
+            <span class="mobile-nav-label">Bảng Lương</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-tab="tab-timesheet">
+            <span class="mobile-nav-icon">⏱️</span>
+            <span class="mobile-nav-label">Chấm Công</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-tab="tab-employees">
+            <span class="mobile-nav-icon">👥</span>
+            <span class="mobile-nav-label">Nhân Sự</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-tab="tab-payslips">
+            <span class="mobile-nav-icon">🧾</span>
+            <span class="mobile-nav-label">Phiếu Lương</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-tab="tab-bonuses">
+            <span class="mobile-nav-icon">🎁</span>
+            <span class="mobile-nav-label">Thưởng/Phạt</span>
+        </button>
+    </nav>
 
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
