@@ -1,7 +1,7 @@
 {
-  "name": "CocoMeo - Quản Lý Lương & Chấm Công",
-  "short_name": "CocoMeo Lương",
-  "description": "Ứng dụng tính lương và quản lý nhân sự chuỗi cà phê CocoMeo",
+  "name": "Cocomeo Salary Staff",
+  "short_name": "Cocomeo Staff",
+  "description": "Ứng dụng tính lương và quản lý nhân sự Cocomeo Salary Staff",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
