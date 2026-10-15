@@ -55,6 +55,7 @@ function initApp() {
     loadStateFromStorage();
     setupEventListeners();
     populateMonthSelector();
+    initMobileFeatures();
     renderDashboard();
     renderPayrollTable();
     renderEmployeesTable();
@@ -967,6 +968,114 @@ function renderPayrollTable() {
             </tr>
         `;
     }
+
+    // Render Mobile Cards Container (Giao diện thẻ tối ưu cho iPhone)
+    const cardsContainer = document.getElementById("payroll-cards-container");
+    if (cardsContainer) {
+        cardsContainer.innerHTML = "";
+        payroll.forEach(p => {
+            const branchClass = p.branch === "CS1" ? "badge-cs1" : (p.branch === "CS2" ? "badge-cs2" : "badge-cs3");
+            const branchColorClass = p.branch.toLowerCase();
+            const statusClass = p.isTransferred ? "transferred" : "pending";
+            const statusText = p.isTransferred ? "✓ Đã Chuyển Khoản" : "⏳ Chưa Chuyển";
+
+            // Initials cho Avatar
+            const nameParts = (p.name || p.code).trim().split(/\s+/);
+            const initials = nameParts.length >= 2 ? 
+                (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() : 
+                (p.name || p.code).substring(0, 2).toUpperCase();
+
+            const card = document.createElement("div");
+            card.className = "payroll-mobile-card";
+            card.innerHTML = `
+                <div class="pmc-header">
+                    <div class="pmc-avatar-info">
+                        <div class="pmc-avatar ${branchColorClass}">${initials}</div>
+                        <div>
+                            <div class="pmc-name">${p.name}</div>
+                            <div class="pmc-sub">
+                                <span class="badge ${branchClass}">${p.branch}</span>
+                                <span>${p.code}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="pmc-transfer-pill ${statusClass}" onclick="toggleTransferStatus('${p.code}')">
+                        ${statusText}
+                    </button>
+                </div>
+
+                <div class="pmc-stats-grid">
+                    <div class="pmc-stat-item">
+                        <span>Giờ làm:</span>
+                        <strong>${p.hours.toFixed(1)}h (${formatVND(p.wage)}/h)</strong>
+                    </div>
+                    <div class="pmc-stat-item">
+                        <span>Lương giờ cơ bản:</span>
+                        <strong>${formatVND(p.baseSalary)}</strong>
+                    </div>
+                    <div class="pmc-stat-item">
+                        <span>Thưởng & phụ cấp:</span>
+                        <strong style="color: #16a34a;">+${formatVND(p.bonus)}</strong>
+                    </div>
+                    <div class="pmc-stat-item">
+                        <span>Ứng & phạt:</span>
+                        <strong style="color: ${p.advance + p.penalty > 0 ? '#dc2626' : '#64748b'};">
+                            ${p.advance + p.penalty > 0 ? '-' + formatVND(p.advance + p.penalty) : '0 đ'}
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="pmc-total-row">
+                    <span class="pmc-total-label">THỰC NHẬN (Tổng cuối):</span>
+                    <span class="pmc-total-amount">${formatVND(p.total)}</span>
+                </div>
+
+                <div class="pmc-actions">
+                    <button type="button" class="pmc-btn pmc-btn-qr" onclick="openVietQRModal('${p.code}')">
+                        📱 Quét VietQR
+                    </button>
+                    <button type="button" class="pmc-btn pmc-btn-slip" onclick="openPayslipModal('${p.code}')">
+                        📄 Phiếu Lương
+                    </button>
+                </div>
+
+                <details class="pmc-details-collapse">
+                    <summary>Xem chi tiết thưởng, cọc áo & ngân hàng ▾</summary>
+                    <div style="margin-top: 0.5rem; line-height: 1.6;">
+                        <div>🏦 <strong>Ngân hàng:</strong> ${p.bankName || 'Chưa cập nhật'}</div>
+                        <div>💳 <strong>STK:</strong> <code style="font-size:0.85rem; color:#4338ca;">${p.bankAccount || 'Chưa có'}</code></div>
+                        <div>👤 <strong>Chủ TK:</strong> ${p.accountHolder || p.name}</div>
+                        <div style="margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px dashed #e2e8f0;">
+                            <div>• Chuyên cần: ${formatVND(p.details?.attendanceBonus || 0)}</div>
+                            <div>• Sinh nhật / Thâm niên: ${formatVND(p.details?.birthdayBonus || 0)}</div>
+                            <div>• Cọc áo / BHXH: ${p.deposit !== 0 ? (p.deposit > 0 ? '+' : '') + formatVND(p.deposit) : '0 đ'}</div>
+                        </div>
+                    </div>
+                </details>
+            `;
+            cardsContainer.appendChild(card);
+        });
+    }
+}
+
+function setPayrollViewMode(mode) {
+    const tableCard = document.getElementById("payroll-table-card");
+    const cardsGrid = document.getElementById("payroll-cards-container");
+    const btnCards = document.getElementById("btn-view-cards");
+    const btnTable = document.getElementById("btn-view-table");
+
+    if (mode === 'cards') {
+        if (tableCard) tableCard.classList.add("hide-on-mobile");
+        if (cardsGrid) cardsGrid.style.display = "grid";
+        if (btnCards) btnCards.classList.add("active");
+        if (btnTable) btnTable.classList.remove("active");
+    } else {
+        if (tableCard) tableCard.classList.remove("hide-on-mobile");
+        if (cardsGrid) cardsGrid.style.display = "none";
+        if (btnCards) btnCards.classList.remove("active");
+        if (btnTable) btnTable.classList.add("active");
+    }
+    localStorage.setItem("payroll_view_mode", mode);
 }
 
 function toggleTransferStatus(staffCode) {
@@ -1558,15 +1667,67 @@ function exportEmployeesToExcel() {
 // XỬ LÝ SỰ KIỆN & GIAO DIỆN CHUNG
 // ==========================================================================
 
+function switchAppTab(targetTabId) {
+    if (!targetTabId) return;
+    document.querySelectorAll(".nav-tab").forEach(t => {
+        t.classList.toggle("active", t.getAttribute("data-tab") === targetTabId);
+    });
+    document.querySelectorAll(".mobile-nav-btn").forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-tab") === targetTabId);
+    });
+    document.querySelectorAll(".tab-pane").forEach(p => {
+        p.classList.toggle("active", p.id === targetTabId);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function initMobileFeatures() {
+    // 1. Khởi tạo chế độ xem mặc định cho điện thoại
+    const isMobile = window.innerWidth <= 768;
+    const savedMode = localStorage.getItem("payroll_view_mode");
+    if (savedMode) {
+        setPayrollViewMode(savedMode);
+    } else if (isMobile) {
+        setPayrollViewMode('cards');
+    }
+
+    // 2. Kiểm tra hiển thị banner hướng dẫn cài đặt màn hình iPhone (Add to Home Screen)
+    checkIosInstallBanner();
+}
+
+function checkIosInstallBanner() {
+    const ua = navigator.userAgent.toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(ua);
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const isDismissed = localStorage.getItem("cocomeo_ios_banner_dismissed") === "true";
+    const banner = document.getElementById("ios-install-banner");
+    if (banner) {
+        if (isIos && !isStandalone && !isDismissed) {
+            banner.style.display = "block";
+        } else {
+            banner.style.display = "none";
+        }
+    }
+}
+
+function dismissIosBanner() {
+    const banner = document.getElementById("ios-install-banner");
+    if (banner) banner.style.display = "none";
+    localStorage.setItem("cocomeo_ios_banner_dismissed", "true");
+}
+
 function setupEventListeners() {
-    // Chuyển Tab
+    // Chuyển Tab trên Desktop
     document.querySelectorAll(".nav-tab").forEach(tab => {
         tab.addEventListener("click", () => {
-            const target = tab.getAttribute("data-tab");
-            document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
-            document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
-            tab.classList.add("active");
-            document.getElementById(target)?.classList.add("active");
+            switchAppTab(tab.getAttribute("data-tab"));
+        });
+    });
+
+    // Chuyển Tab trên Mobile (Bottom Navigation)
+    document.querySelectorAll(".mobile-nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            switchAppTab(btn.getAttribute("data-tab"));
         });
     });
 
