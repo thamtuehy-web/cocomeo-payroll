@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CocoMeo - Hệ Thống Quản Lý Lương & Nhân Viên Tự Động</title>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- SheetJS for Excel Import/Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header ứng dụng -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">🐾</div>
+                <div>
+                    <div class="brand-title">CocoMeo Payroll & Staff</div>
+                    <div class="brand-tagline">Hệ Thống Quản Lý Lương, Chấm Công & Hồ Sơ Nhân Viên 3 Cơ Sở (CS1, CS2, CS3)</div>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="month-selector-box">
+                    <label for="month-selector">📅 KỲ LƯƠNG:</label>
+                    <select id="month-selector">
+                        <option value="2026-09" selected>Tháng 09/2026</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-success" onclick="calculateMonthlyPayroll()" title="Tự động tính lại toàn bộ lương tháng này theo công, thưởng, phạt">
+                    ⚡ Tự Động Tính Lương
+                </button>
+
+                <button class="btn btn-outline" onclick="exportPayrollToExcel()" title="Xuất file Excel bảng lương chuẩn">
+                    📥 Xuất Excel
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Bar -->
+    <nav class="app-nav">
+        <div class="nav-container">
+            <button class="nav-tab active" data-tab="tab-payroll">
+                📊 Bảng Lương Tổng Hợp
+            </button>
+            <button class="nav-tab" data-tab="tab-timesheet">
+                ⏱️ Nhập Công & Tính Tự Động
+            </button>
+            <button class="nav-tab" data-tab="tab-employees">
+                👥 Hồ Sơ Nhân Viên <span class="tab-badge" id="badge-emp-count">35</span>
+            </button>
+            <button class="nav-tab" data-tab="tab-bonuses">
+                🎁 Thưởng & Phụ Phí
+            </button>
+            <button class="nav-tab" data-tab="tab-penalties">
+                ⚠️ Phạt Kỷ Luật
+            </button>
+            <button class="nav-tab" data-tab="tab-advances">
+                💵 Tạm Ứng
+            </button>
+            <button class="nav-tab" data-tab="tab-deposits">
+                👕 Cọc Áo & BHXH
+            </button>
+            <button class="nav-tab" data-tab="tab-settings">
+                ⚙️ Cấu Hình & Bậc Thang
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- ====================================================================
+             TAB 1: BẢNG LƯƠNG TỔNG HỢP
+             ==================================================================== -->
+        <section id="tab-payroll" class="tab-pane active">
+            <!-- Thống kê đầu trang -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-header">
+                        <span>Tổng Quỹ Lương</span>
+                        <div class="stat-icon">💰</div>
+                    </div>
+                    <div class="stat-value" id="stat-total-payroll">0 đ</div>
+                    <div class="stat-subtext">Thực chi sau cọc, ứng & phạt</div>
+                </div>
+
+                <div class="stat-card info">
+                    <div class="stat-header">
+                        <span>Tổng Giờ Làm</span>
+                        <div class="stat-icon">⏱️</div>
+                    </div>
+                    <div class="stat-value" id="stat-total-hours">0h</div>
+                    <div class="stat-subtext">Tổng giờ công toàn hệ thống</div>
+                </div>
+
+                <div class="stat-card success">
+                    <div class="stat-header">
+                        <span>Tổng Thưởng & Phụ Cấp</span>
+                        <div class="stat-icon">🎁</div>
+                    </div>
+                    <div class="stat-value" id="stat-total-bonus">0 đ</div>
+                    <div class="stat-subtext">Chuyên cần, xăng, khách đoàn, SN</div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-header">
+                        <span>Tạm Ứng Đã Trừ</span>
+                        <div class="stat-icon">💵</div>
+                    </div>
+                    <div class="stat-value" id="stat-total-advance">0 đ</div>
+                    <div class="stat-subtext">Tổng số tiền NV đã ứng</div>
+                </div>
+
+                <div class="stat-card danger">
+                    <div class="stat-header">
+                        <span>Phạt Kỷ Luật</span>
+                        <div class="stat-icon">⚠️</div>
+                    </div>
+                    <div class="stat-value" id="stat-total-penalty">0 đ</div>
+                    <div class="stat-subtext">Khấu trừ lỗi vi phạm</div>
+                </div>
+
+                <div class="stat-card secondary">
+                    <div class="stat-header">
+                        <span>Nhân Sự Nhận Lương</span>
+                        <div class="stat-icon">👥</div>
+                    </div>
+                    <div class="stat-value" id="stat-staff-count">0</div>
+                    <div class="stat-subtext">Nhân viên có phát sinh công/lương</div>
+                </div>
+            </div>
+
+            <!-- Thống kê phân bổ theo 3 Cơ sở (CS1, CS2, CS3) -->
+            <div class="branch-pnl-card">
+                <div class="section-title" style="font-size: 1.05rem;">
+                    🏢 Phân Bổ Chi Phí Lương Theo Từng Cơ Sở (Balance PnL)
+                </div>
+                <div class="branch-pnl-grid">
+                    <div class="branch-box cs1">
+                        <div class="branch-title">
+                            <span>📍 CƠ SỞ 1 (CS1)</span>
+                            <span class="badge badge-cs1" id="cs1-count">0 NV</span>
+                        </div>
+                        <div class="branch-detail-row">
+                            <span>Tổng giờ làm việc:</span>
+                            <strong id="cs1-hours">0h</strong>
+                        </div>
+                        <div class="branch-detail-row bold">
+                            <span>Tổng lương CS1:</span>
+                            <strong id="cs1-total" style="color: var(--cs1-color);">0 đ</strong>
+                        </div>
+                    </div>
+
+                    <div class="branch-box cs2">
+                        <div class="branch-title">
+                            <span>📍 CƠ SỞ 2 (CS2)</span>
+                            <span class="badge badge-cs2" id="cs2-count">0 NV</span>
+                        </div>
+                        <div class="branch-detail-row">
+                            <span>Tổng giờ làm việc:</span>
+                            <strong id="cs2-hours">0h</strong>
+                        </div>
+                        <div class="branch-detail-row bold">
+                            <span>Tổng lương CS2:</span>
+                            <strong id="cs2-total" style="color: var(--cs2-color);">0 đ</strong>
+                        </div>
+                    </div>
+
+                    <div class="branch-box cs3">
+                        <div class="branch-title">
+                            <span>📍 CƠ SỞ 3 (CS3)</span>
+                            <span class="badge badge-cs3" id="cs3-count">0 NV</span>
+                        </div>
+                        <div class="branch-detail-row">
+                            <span>Tổng giờ làm việc:</span>
+                            <strong id="cs3-hours">0h</strong>
+                        </div>
+                        <div class="branch-detail-row bold">
+                            <span>Tổng lương CS3:</span>
+                            <strong id="cs3-total" style="color: var(--cs3-color);">0 đ</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng Lương Master -->
+            <div class="section-header">
+                <div class="section-title">
+                    📋 Bảng Lương Chi Tiết Từng Nhân Viên
+                </div>
+
+                <div class="toolbar">
+                    <input type="text" id="payroll-search" class="search-input" placeholder="🔍 Tìm tên, mã chấm công, STK...">
+                    <select id="payroll-branch-filter" class="filter-select">
+                        <option value="all">Tất cả cơ sở (CS1, CS2, CS3)</option>
+                        <option value="CS1">Cơ sở 1 (CS1)</option>
+                        <option value="CS2">Cơ sở 2 (CS2)</option>
+                        <option value="CS3">Cơ sở 3 (CS3)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="custom-table" id="payroll-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Cơ sở</th>
+                                <th>Nhân viên</th>
+                                <th class="text-right">Tổng giờ làm</th>
+                                <th class="text-right">Lương/giờ</th>
+                                <th class="text-right">Lương giờ (Initial)</th>
+                                <th class="text-right">Đã ứng</th>
+                                <th class="text-right">Phạt vi phạm</th>
+                                <th class="text-right">Còn lại</th>
+                                <th class="text-right">Cọc áo/BHXH</th>
+                                <th class="text-right">Thưởng</th>
+                                <th class="text-right" style="color: #b45309;">TỔNG CUỐI</th>
+                                <th>Tài khoản nhận tiền</th>
+                                <th class="text-center">Chuyển khoản</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payroll-table-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                        <tfoot id="payroll-table-foot">
+                            <!-- Render tổng cộng bằng JS -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 2: NHẬP CÔNG CUỐI THÁNG & TÍNH TỰ ĐỘNG
+             ==================================================================== -->
+        <section id="tab-timesheet" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title">
+                    ⏱️ Nhập Dữ Liệu Máy Chấm Công & Tự Động Tính Giờ
+                </div>
+
+                <div class="toolbar">
+                    <button class="btn btn-outline" id="btn-load-sample-punch">
+                        📋 Nạp Thử Dữ Liệu Mẫu (Demo)
+                    </button>
+                    <button class="btn btn-outline" onclick="syncDesktopExcel()" title="Ghi toàn bộ dữ liệu bảng lương vào file Calcul Salaire.xlsx trên Desktop">
+                        💾 Đồng Bộ File Desktop (.xlsx)
+                    </button>
+                    <button class="btn btn-success" onclick="calculateMonthlyPayroll()">
+                        ⚡ Tính Lại Lương Từ Bảng Công
+                    </button>
+                </div>
+            </div>
+
+            <!-- KHỐI 1: NẠP FILE EXCEL CHẤM CÔNG HÀNG THÁNG -->
+            <div class="table-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 2px solid #6366f1; background: linear-gradient(to bottom, #f8faff, #ffffff);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.2rem; color: #1e1b4b; display: flex; align-items: center; gap: 0.5rem;">
+                            📥 1. Nạp File Excel Máy Chấm Công Hàng Tháng
+                            <span class="badge badge-success" style="font-size: 0.75rem;">Hỗ trợ .xlsx, .xls, .csv</span>
+                        </h3>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.88rem; color: var(--text-muted);">
+                            Hàng tháng khi máy chấm công xuất file Excel, chỉ cần chọn hoặc kéo thả file vào đây. Hệ thống sẽ <strong>tự động đọc giờ quẹt thẻ, tính tổng giờ công và tự động tính toàn bộ bảng lương</strong> cho từng nhân viên!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Dropzone kéo thả & Nút chọn file lớn -->
+                <div class="upload-dropzone" id="punch-dropzone" style="border: 2px dashed #6366f1; background: #f5f7ff; padding: 2rem 1.5rem; text-align: center; cursor: pointer; border-radius: 12px; transition: all 0.2s;">
+                    <div class="upload-icon" style="font-size: 3rem; margin-bottom: 0.5rem;">📊</div>
+                    <div class="upload-title" style="font-size: 1.15rem; font-weight: 700; color: #3730a3; margin-bottom: 0.5rem;">
+                        KÉO & THẢ FILE EXCEL CHẤM CÔNG (.XLSX / .XLS / .CSV) VÀO ĐÂY
+                    </div>
+                    <div style="margin-bottom: 1rem; color: #4b5563; font-size: 0.9rem;">
+                        hoặc bấm nút màu xanh bên dưới để chọn file từ máy tính / điện thoại của bạn
+                    </div>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="document.getElementById('punch-file-input').click(); event.stopPropagation();" style="padding: 0.75rem 1.75rem; font-size: 1rem; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);">
+                        📂 Chọn File Excel Chấm Công (.xlsx) Từ Máy
+                    </button>
+                    <input type="file" id="punch-file-input" accept=".xlsx, .xls, .csv, .txt" style="display: none;">
+                    <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #6b7280;">
+                        ✓ Hỗ trợ định dạng quẹt vân tay: <code>Mã, Tên nhân viên, Tên bộ phận, Ngày, Thứ, 1, 2, 3, 4, 5...</code>
+                    </div>
+                </div>
+
+                <!-- Tuỳ chọn tự động -->
+                <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; background: #ffffff; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #166534; cursor: pointer;">
+                        <input type="checkbox" id="cb-auto-calc-payroll" checked style="width: 18px; height: 18px;">
+                        ⚡ Tự động tính toán & cập nhật Bảng Lương ngay sau khi nạp file
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #1e40af; cursor: pointer;">
+                        <input type="checkbox" id="cb-auto-sync-desktop" checked style="width: 18px; height: 18px;">
+                        💾 Tự động đồng bộ vào file Excel ngoài Desktop (Calcul Salaire.xlsx)
+                    </label>
+                </div>
+
+                <!-- Banner Thông Báo Thành Công Sau Khi Nạp File -->
+                <div id="punch-success-banner" style="display: none; margin-top: 1rem; padding: 1.25rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <div style="font-weight: 700; color: #15803d; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                🎉 ĐÃ NẠP FILE & TỰ ĐỘNG TÍNH LƯƠNG THÀNH CÔNG!
+                            </div>
+                            <div id="punch-success-detail" style="font-size: 0.92rem; color: #166534; margin-top: 0.35rem;">
+                                <!-- Chi tiết render bằng JS -->
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-success" onclick="document.querySelector('[data-tab=\'tab-payroll\']').click();">
+                                👉 Xem Bảng Lương Ngay ➔
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi tiết xem trước / nâng cao (dán text) -->
+                <details style="margin-top: 1rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem;">
+                    <summary style="font-size: 0.88rem; color: #64748b; cursor: pointer; font-weight: 600;">
+                        ⚙️ Xem nội dung thô / Dán dữ liệu trực tiếp (Copy-Paste)
+                    </summary>
+                    <div style="margin-top: 0.75rem;">
+                        <textarea id="punch-log-input" class="form-control" style="min-height: 120px; font-family: monospace; font-size: 0.8rem;" placeholder="Mã,Tên nhân viên,Tên bộ phận,Ngày,Thứ,1,2,3,4,5,6,7,8,9,10..."></textarea>
+                        <button class="btn btn-primary" id="btn-parse-punch" style="margin-top: 0.5rem;">
+                            ⚙️ Phân Tích Dữ Liệu Trong Ô Trên
+                        </button>
+                    </div>
+                </details>
+            </div>
+
+            <!-- KHỐI 2: BẢNG DỮ LIỆU CÔNG THÁNG HIỆN TẠI & BỔ SUNG CHẤM NGOÀI GIẤY -->
+            <div class="table-card" style="margin-bottom: 1.5rem;">
+                <div class="section-header" style="padding: 1.25rem 1.5rem 0.5rem 1.5rem;">
+                    <div>
+                        <div class="section-title" style="font-size: 1.1rem;">
+                            📅 2. Bảng Dữ Liệu Công Tháng Hiện Tại (<span id="timesheet-loaded-count">0 Nhân viên</span>)
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+                            Bạn có thể thêm số giờ làm thêm / chấm công ngoài giấy vào cột màu vàng. Hệ thống sẽ tự cộng vào tổng giờ làm và tính lại lương.
+                        </div>
+                    </div>
+                    <div class="toolbar">
+                        <button class="btn btn-outline" onclick="syncDesktopExcel()" title="Ghi toàn bộ dữ liệu bảng lương vào file Calcul Salaire.xlsx trên Desktop">
+                            💾 Đồng Bộ File Desktop (.xlsx)
+                        </button>
+                        <button class="btn btn-success" onclick="calculateMonthlyPayroll()">
+                            ⚡ Tính Lại Lương Từ Bảng Công Này
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Cơ sở</th>
+                                <th>Nhân viên / Mã CC</th>
+                                <th class="text-right">Giờ máy chấm</th>
+                                <th class="text-center" style="background: #fef3c7; color: #92400e;">Giờ làm thêm / Chấm giấy (h)</th>
+                                <th style="background: #fef3c7; color: #92400e;">Ghi chú làm thêm</th>
+                                <th class="text-right" style="background: #e0e7ff; color: #3730a3;">Tổng giờ làm thực tế (h)</th>
+                                <th class="text-right">Lương/giờ</th>
+                                <th class="text-right">Lương giờ dự kiến</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timesheet-loaded-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Kết quả phân tích chấm công Preview -->
+            <div id="punch-preview-container" class="table-card" style="display: none; padding: 1.5rem;">
+                <div class="section-header" style="margin-bottom: 1rem;">
+                    <div class="section-title" style="font-size: 1.1rem;">
+                        🔍 Kết Quả Phân Tích Chấm Công & Đối Soát Nhân Viên
+                    </div>
+                    <button class="btn btn-success btn-lg" onclick="applyTimesheetAndCalculate()">
+                        🚀 Áp Dụng & Tự Động Tính Bảng Lương Ngay
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Tên nhân viên trên máy</th>
+                                <th>Cơ sở</th>
+                                <th class="text-right">Tổng giờ tính được</th>
+                                <th class="text-center">Số ngày đi làm</th>
+                                <th>Khớp với Hồ sơ</th>
+                                <th>Cảnh báo quẹt thẻ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="punch-preview-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 3: HỒ SƠ NHÂN VIÊN
+             ==================================================================== -->
+        <section id="tab-employees" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title">
+                    👥 Danh Sách & Hồ Sơ Nhân Sự CocoMeo (3 Cơ Sở)
+                </div>
+
+                <div class="toolbar">
+                    <input type="text" id="emp-search" class="search-input" placeholder="🔍 Tìm tên, mã, số ĐT, STK...">
+                    <select id="emp-branch-filter" class="filter-select">
+                        <option value="all">Tất cả cơ sở</option>
+                        <option value="CS1">Cơ sở 1 (CS1)</option>
+                        <option value="CS2">Cơ sở 2 (CS2)</option>
+                        <option value="CS3">Cơ sở 3 (CS3)</option>
+                    </select>
+                    <select id="emp-status-filter" class="filter-select">
+                        <option value="active">Đang làm việc</option>
+                        <option value="retired">Đã nghỉ việc / Thời vụ</option>
+                        <option value="all">Tất cả</option>
+                    </select>
+
+                    <button class="btn btn-primary" onclick="openAddEmployeeModal()">
+                        ➕ Thêm Nhân Viên
+                    </button>
+                    <button class="btn btn-outline" onclick="exportEmployeesToExcel()">
+                        📥 Xuất DS Nhân Sự
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="custom-table" id="employees-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Cơ sở</th>
+                                <th>Nhân viên / Mã CC</th>
+                                <th class="text-right">Mức lương/giờ</th>
+                                <th>Ngày vào / Thâm niên</th>
+                                <th>Liên hệ / Ngày sinh</th>
+                                <th>Tài khoản Ngân hàng</th>
+                                <th>Trạng thái</th>
+                                <th>Ghi chú / Lý do nghỉ</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employees-table-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 4: THƯỞNG & PHỤ PHÍ
+             ==================================================================== -->
+        <section id="tab-bonuses" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title">
+                    🎁 Chi Tiết Các Khoản Thưởng & Phụ Phí Trong Tháng
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-primary" onclick="alert('Khoản thưởng đã được tích hợp tự động (Chuyên cần theo giờ, Sinh nhật theo thâm niên > 6T, Khách đoàn, Xăng xe, Giới thiệu...). Bạn có thể chỉnh sửa trực tiếp trong bảng lương hoặc file data.')">
+                        ➕ Thêm Thưởng Nóng / Phụ Phí
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Cơ sở</th>
+                                <th>Nhân viên</th>
+                                <th>Loại thưởng</th>
+                                <th class="text-right">Số tiền thưởng</th>
+                                <th>Ghi chú / Ngày hưởng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bonuses-table-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 5: PHẠT KỶ LUẬT
+             ==================================================================== -->
+        <section id="tab-penalties" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title">
+                    ⚠️ Xử Lý Kỷ Luật & Khấu Trừ Vi Phạm
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-danger" onclick="alert('Bạn có thể ghi nhận phạt bỏ ca, chơi điện thoại, đi muộn... Khoản phạt sẽ tự động khấu trừ vào bảng lương.')">
+                        ➕ Ghi Nhận Vi Phạm
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Cơ sở</th>
+                                <th>Nhân viên</th>
+                                <th class="text-right">Số tiền phạt</th>
+                                <th>Ngày vi phạm</th>
+                                <th>Lỗi vi phạm kỷ luật</th>
+                            </tr>
+                        </thead>
+                        <tbody id="penalties-table-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 6: TẠM ỨNG LƯƠNG
+             ==================================================================== -->
+        <section id="tab-advances" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title">
+                    💵 Danh Sách Tạm Ứng Lương Giữa Tháng
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-primary" onclick="alert('Ghi nhận tạm ứng giữa tháng. Tiền ứng sẽ được tự động trừ vào bảng lương cuối tháng.')">
+                        ➕ Thêm Tạm Ứng
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Cơ sở</th>
+                                <th>Nhân viên</th>
+                                <th class="text-right">Số tiền ứng</th>
+                                <th>Ngày ứng</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="advances-table-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 7: CỌC ÁO ĐỒNG PHỤC & BHXH
+             ==================================================================== -->
+        <section id="tab-deposits" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title">
+                    👕 Quản Lý Cọc Áo Đồng Phục & Tiền Bảo Hiểm Xã Hội
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">STT</th>
+                                <th>Cơ sở</th>
+                                <th>Nhân viên</th>
+                                <th>Loại</th>
+                                <th class="text-right">Số tiền</th>
+                                <th>Ngày thực hiện</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deposits-table-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 8: CẤU HÌNH & BẬC THANG
+             ==================================================================== -->
+        <section id="tab-settings" class="tab-pane">
+            <div class="section-header">
+                <div class="section-title">
+                    ⚙️ Cấu Hình Quy Định Lương & Bậc Thang Chuyên Cần
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-danger" onclick="resetToDefaultData()">
+                        🔄 Khôi Phục Dữ Liệu Gốc CocoMeo T9/2026
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="table-card" style="padding: 1.5rem;">
+                    <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.75rem;">
+                        🏆 Bậc Thang Thưởng Chuyên Cần (Attendance Ladder)
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Hệ thống tự động tra cứu tổng số giờ làm của từng người trong tháng để áp mức thưởng tương ứng.
+                    </p>
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Bậc</th>
+                                <th>Mốc giờ làm việc tối thiểu</th>
+                                <th class="text-right">Tiền thưởng chuyên cần</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ladder-table-body">
+                            <!-- Render bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-card" style="padding: 1.5rem;">
+                    <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.75rem;">
+                        📋 Các Quy Tắc Tính Lương Tự Động CocoMeo
+                    </h3>
+                    <ul style="font-size: 0.88rem; line-height: 1.8; color: var(--text-muted); padding-left: 1.25rem;">
+                        <li><strong>Lương cơ bản (Total initial):</strong> = Tổng giờ làm (dưới dạng thập phân) × Mức lương theo giờ của nhân viên.</li>
+                        <li><strong>Thưởng chuyên cần:</strong> Tự động lấy theo bậc thang giờ làm đạt được trong tháng.</li>
+                        <li><strong>Thưởng sinh nhật:</strong> Tự động kiểm tra nhân viên có ngày sinh trong tháng và thâm niên ≥ 6 tháng → Tự động thưởng 100,000 đ.</li>
+                        <li><strong>Thưởng giới thiệu (Cooptation):</strong> 100,000 đ cho nhân viên giới thiệu được người mới vào làm việc.</li>
+                        <li><strong>Tạm ứng & Phạt vi phạm:</strong> Khấu trừ trực tiếp vào lương.</li>
+                        <li><strong>Cọc áo đồng phục:</strong> Thu cọc 300,000 đ khi nhận áo, hoàn lại 300,000 đ khi nghỉ việc bàn giao đủ áo.</li>
+                        <li><strong>Làm tròn số tiền:</strong> Toàn bộ lương thực nhận được tự động làm tròn đến hàng nghìn đồng gần nhất (ví dụ 2,061,167 đ → 2,062,000 đ).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ====================================================================
+         MODAL: VIETQR CHUYỂN KHOẢN NHANH
+         ==================================================================== -->
+    <div id="vietqr-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">📱 Quét Mã VietQR Chuyển Khoản Lương</div>
+                <button class="modal-close" onclick="closeModal('vietqr-modal')">&times;</button>
+            </div>
+            <div class="modal-body vietqr-card">
+                <div class="vietqr-image-wrapper">
+                    <img id="vietqr-img" class="vietqr-image" src="" alt="Mã VietQR Chuyển Khoản">
+                </div>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">
+                    Mở ứng dụng ngân hàng bất kỳ (MB, Vietcombank, Techcombank, TPBank, v.v.) và quét mã để thanh toán ngay lập tức.
+                </p>
+
+                <div class="vietqr-details">
+                    <div class="vietqr-row">
+                        <span>Ngân hàng:</span>
+                        <strong id="vietqr-bank">-</strong>
+                    </div>
+                    <div class="vietqr-row">
+                        <span>Số tài khoản:</span>
+                        <div>
+                            <strong id="vietqr-stk" style="font-family: monospace; color: var(--primary);">-</strong>
+                            <button class="copy-pill" onclick="copyToClipboard(document.getElementById('vietqr-stk').textContent, 'Số tài khoản')">Sao chép</button>
+                        </div>
+                    </div>
+                    <div class="vietqr-row">
+                        <span>Chủ tài khoản:</span>
+                        <strong id="vietqr-holder">-</strong>
+                    </div>
+                    <div class="vietqr-row">
+                        <span>Số tiền lương:</span>
+                        <div>
+                            <strong id="vietqr-amount" style="color: #b45309; font-size: 1.1rem;">-</strong>
+                            <button class="copy-pill" onclick="copyToClipboard(document.getElementById('vietqr-amount').textContent.replace(/[^\d]/g, ''), 'Số tiền')">Sao chép</button>
+                        </div>
+                    </div>
+                    <div class="vietqr-row">
+                        <span>Nội dung chuyển khoản:</span>
+                        <div>
+                            <strong id="vietqr-content" style="font-size: 0.82rem;">-</strong>
+                            <button class="copy-pill" onclick="copyToClipboard(document.getElementById('vietqr-content').textContent, 'Nội dung')">Sao chép</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('vietqr-modal')">Đóng</button>
+                <button class="btn btn-success" id="btn-vietqr-confirm">✓ Đánh Dấu Đã Chuyển Khoản</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL: IN PHIẾU LƯƠNG CÁ NHÂN (PAYSLIP)
+         ==================================================================== -->
+    <div id="payslip-modal" class="modal-overlay">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <div class="modal-title">📄 Phiếu Lương Chi Tiết</div>
+                <button class="modal-close" onclick="closeModal('payslip-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="payslip-content" class="payslip-container">
+                    <!-- Render bằng JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('payslip-modal')">Đóng</button>
+                <button class="btn btn-primary" onclick="printCurrentPayslip()">🖨️ In Phiếu Lương / Xuất PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL: THÊM / SỬA HỒ SƠ NHÂN VIÊN
+         ==================================================================== -->
+    <div id="employee-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="employee-modal-title">Hồ Sơ Nhân Viên</div>
+                <button class="modal-close" onclick="closeModal('employee-modal')">&times;</button>
+            </div>
+            <form id="employee-form">
+                <input type="hidden" id="emp-modal-id">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Họ và Tên <span class="required">*</span></label>
+                            <input type="text" id="emp-modal-name" class="form-control" required placeholder="Ví dụ: Đặng Thị Ánh Hồng">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Tên Chấm Công / Mã <span class="required">*</span></label>
+                            <input type="text" id="emp-modal-code" class="form-control" required placeholder="Ví dụ: Anhhong">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Cơ Sở Trực Thuộc <span class="required">*</span></label>
+                            <select id="emp-modal-branch" class="form-control" required>
+                                <option value="CS1">Cơ sở 1 (CS1)</option>
+                                <option value="CS2">Cơ sở 2 (CS2)</option>
+                                <option value="CS3">Cơ sở 3 (CS3)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Mức Lương / Giờ (VND) <span class="required">*</span></label>
+                            <input type="number" id="emp-modal-wage" class="form-control" step="1000" required placeholder="20000">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Ngày Bắt Đầu Làm Việc</label>
+                            <input type="date" id="emp-modal-start" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Ngày Sinh</label>
+                            <input type="date" id="emp-modal-birth" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Số Điện Thoại / Zalo</label>
+                            <input type="text" id="emp-modal-phone" class="form-control" placeholder="0905 123 456">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Trạng Thái Làm Việc</label>
+                            <select id="emp-modal-status" class="form-control">
+                                <option value="active">Đang làm việc</option>
+                                <option value="retired">Đã nghỉ việc / Thời vụ</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Ngân Hàng</label>
+                            <input type="text" id="emp-modal-bank" class="form-control" placeholder="MB, Vietcombank, TP Bank...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Số Tài Khoản</label>
+                            <input type="text" id="emp-modal-stk" class="form-control" placeholder="0366 1749 301">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Tên Chủ Tài Khoản</label>
+                            <input type="text" id="emp-modal-holder" class="form-control" placeholder="PHAN NGAN HONG YEN">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Ghi Chú</label>
+                            <input type="text" id="emp-modal-note" class="form-control" placeholder="Người giới thiệu, cọc áo...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('employee-modal')">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu Hồ Sơ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Load App Scripts -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
