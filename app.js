@@ -48,10 +48,123 @@ const BANK_CODES = {
 };
 
 // ==========================================================================
+// HỆ THỐNG XÁC THỰC & ĐĂNG NHẬP (LOGIN SYSTEM)
+// ==========================================================================
+
+function checkAuthStatus() {
+    const token = localStorage.getItem("cocomeo_auth_token");
+    const loginOverlay = document.getElementById("login-overlay");
+    if (!token) {
+        if (loginOverlay) loginOverlay.classList.remove("hidden");
+        return false;
+    }
+    if (loginOverlay) loginOverlay.classList.add("hidden");
+    return true;
+}
+
+async function handleLoginSubmit(event) {
+    if (event) event.preventDefault();
+    const usernameInput = document.getElementById("login-username");
+    const passwordInput = document.getElementById("login-password");
+    const errorEl = document.getElementById("login-error-msg");
+    const submitBtn = document.getElementById("btn-login-submit");
+
+    const username = (usernameInput?.value || "").trim();
+    const password = (passwordInput?.value || "").trim();
+
+    if (!username || !password) {
+        if (errorEl) {
+            errorEl.textContent = "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!";
+            errorEl.style.display = "block";
+        }
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "⏳ Đang đăng nhập...";
+    }
+
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            localStorage.setItem("cocomeo_auth_token", data.token);
+            localStorage.setItem("cocomeo_auth_user", data.user || username);
+
+            const loginOverlay = document.getElementById("login-overlay");
+            if (loginOverlay) loginOverlay.classList.add("hidden");
+
+            showToast("👋 Đăng nhập thành công! Chào mừng Quản lý CocoMeo.", "success");
+            if (errorEl) errorEl.style.display = "none";
+        } else {
+            if (errorEl) {
+                errorEl.textContent = data.error || "Tên đăng nhập hoặc mật khẩu không chính xác!";
+                errorEl.style.display = "block";
+            }
+            showToast("Đăng nhập thất bại!", "error");
+        }
+    } catch (err) {
+        // Fallback kiểm tra offline nếu không kết nối được server
+        if (username.toLowerCase() === "cocomeo" && password === "12121990") {
+            const token = "cocomeo_token_offline_" + Date.now();
+            localStorage.setItem("cocomeo_auth_token", token);
+            localStorage.setItem("cocomeo_auth_user", "cocomeo");
+
+            const loginOverlay = document.getElementById("login-overlay");
+            if (loginOverlay) loginOverlay.classList.add("hidden");
+
+            showToast("👋 Đăng nhập thành công (Chế độ Offline/PWA)!", "success");
+            if (errorEl) errorEl.style.display = "none";
+        } else {
+            if (errorEl) {
+                errorEl.textContent = "Tên đăng nhập hoặc mật khẩu không chính xác!";
+                errorEl.style.display = "block";
+            }
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "🚀 Đăng Nhập";
+        }
+    }
+}
+
+function handleLogout() {
+    if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống CocoMeo?")) {
+        localStorage.removeItem("cocomeo_auth_token");
+        localStorage.removeItem("cocomeo_auth_user");
+        const loginOverlay = document.getElementById("login-overlay");
+        if (loginOverlay) {
+            loginOverlay.classList.remove("hidden");
+            const passwordInput = document.getElementById("login-password");
+            if (passwordInput) passwordInput.value = "";
+        }
+        showToast("Đã đăng xuất thành công!", "info");
+    }
+}
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById("login-password");
+    if (!passwordInput) return;
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+    } else {
+        passwordInput.type = "password";
+    }
+}
+
+// ==========================================================================
 // KHỞI TẠO VÀ LƯU TRỮ (LOCALSTORAGE)
 // ==========================================================================
 
 function initApp() {
+    checkAuthStatus();
     loadStateFromStorage();
     setupEventListeners();
     populateMonthSelector();
