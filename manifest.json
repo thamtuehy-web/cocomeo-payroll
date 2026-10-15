@@ -1,0 +1,24 @@
+{
+  "name": "CocoMeo - Quản Lý Lương & Chấm Công",
+  "short_name": "CocoMeo Lương",
+  "description": "Ứng dụng tính lương và quản lý nhân sự chuỗi cà phê CocoMeo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
