@@ -21,6 +21,53 @@
 </head>
 <body>
 
+    <!-- MÀN HÌNH ĐĂNG NHẬP (LOGIN SCREEN) -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo-badge">🐾</div>
+                <h1 class="login-title">CocoMeo Cat Coffee</h1>
+                <p class="login-subtitle">Hệ Thống Quản Lý Lương & Nhân Sự Nội Bộ</p>
+            </div>
+
+            <form id="login-form" class="login-form" onsubmit="handleLoginSubmit(event)">
+                <div id="login-error-msg" class="login-error" style="display: none;"></div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="login-username">Tên đăng nhập</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="login-username" class="form-control login-input" placeholder="Nhập tên đăng nhập..." autocomplete="username" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label class="form-label" for="login-password">Mật khẩu</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="login-password" class="form-control login-input" placeholder="Nhập mật khẩu..." autocomplete="current-password" required>
+                        <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility()" title="Hiện/ẩn mật khẩu">👁️</button>
+                    </div>
+                </div>
+
+                <div class="login-remember-row" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: #475569; cursor: pointer;">
+                        <input type="checkbox" id="login-remember" checked style="width: 16px; height: 16px;">
+                        Ghi nhớ đăng nhập trên máy này
+                    </label>
+                </div>
+
+                <button type="submit" id="btn-login-submit" class="btn btn-primary btn-lg" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 1rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);">
+                    🚀 Đăng Nhập
+                </button>
+            </form>
+
+            <div class="login-footer">
+                🔒 Hệ thống bảo mật 3 cơ sở CS1, CS2, CS3
+            </div>
+        </div>
+    </div>
+
     <!-- Header ứng dụng -->
     <header class="app-header">
         <div class="header-container">
@@ -46,6 +93,10 @@
 
                 <button class="btn btn-outline" onclick="exportPayrollToExcel()" title="Xuất file Excel bảng lương chuẩn">
                     📥 Xuất Excel
+                </button>
+
+                <button class="btn btn-outline logout-btn" onclick="handleLogout()" title="Đăng xuất khỏi hệ thống" style="color: #ef4444; border-color: #fca5a5; font-weight: 600;">
+                    🚪 Đăng xuất
                 </button>
             </div>
         </div>
