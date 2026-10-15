@@ -100,7 +100,7 @@ async function handleLoginSubmit(event) {
             const loginOverlay = document.getElementById("login-overlay");
             if (loginOverlay) loginOverlay.classList.add("hidden");
 
-            showToast("👋 Đăng nhập thành công! Chào mừng Quản lý CocoMeo.", "success");
+            showToast("👋 Đăng nhập thành công! Chào mừng Quản lý Cocomeo Salary Staff.", "success");
             if (errorEl) errorEl.style.display = "none";
         } else {
             if (errorEl) {
@@ -136,7 +136,7 @@ async function handleLoginSubmit(event) {
 }
 
 function handleLogout() {
-    if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống CocoMeo?")) {
+    if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống Cocomeo Salary Staff?")) {
         localStorage.removeItem("cocomeo_auth_token");
         localStorage.removeItem("cocomeo_auth_user");
         const loginOverlay = document.getElementById("login-overlay");
