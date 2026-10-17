@@ -1233,6 +1233,28 @@ function renderEmployeesTable() {
         return true;
     });
 
+    const sortVal = document.getElementById("emp-sort-select")?.value || "tenure-desc";
+    list.sort((a, b) => {
+        if (sortVal === "tenure-desc") {
+            const tA = parseFloat(a.tenureMonths) || 0;
+            const tB = parseFloat(b.tenureMonths) || 0;
+            if (tB !== tA) return tB - tA;
+            return (a.startDate || "").localeCompare(b.startDate || "");
+        } else if (sortVal === "tenure-asc") {
+            const tA = parseFloat(a.tenureMonths) || 0;
+            const tB = parseFloat(b.tenureMonths) || 0;
+            if (tA !== tB) return tA - tB;
+            return (a.startDate || "").localeCompare(b.startDate || "");
+        } else if (sortVal === "name-asc") {
+            return (a.name || "").localeCompare(b.name || "", "vi");
+        } else if (sortVal === "wage-desc") {
+            return (b.hourlyWage || 0) - (a.hourlyWage || 0);
+        } else if (sortVal === "branch-asc") {
+            return (a.branch || "").localeCompare(b.branch || "");
+        }
+        return 0;
+    });
+
     tbody.innerHTML = "";
 
     if (list.length === 0) {
@@ -1774,6 +1796,167 @@ function exportEmployeesToExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "NhanSu");
     XLSX.writeFile(wb, `CocoMeo_DanhSachNhanSu.xlsx`);
     showToast("Đã xuất danh sách nhân sự thành công!", "success");
+}
+
+// ==========================================================================
+// BẢNG TỔNG HỢP & XẾP HẠNG THÂM NIÊN NHÂN VIÊN ĐANG LÀM VIỆC
+// ==========================================================================
+
+function formatTenureText(months) {
+    if (!months && months !== 0) return "-";
+    const total = Math.round(months * 10) / 10;
+    const y = Math.floor(total / 12);
+    const m = Math.round((total % 12) * 10) / 10;
+    if (y > 0 && m > 0) return `${y} năm ${m} tháng`;
+    if (y > 0 && m === 0) return `${y} năm`;
+    return `${m} tháng`;
+}
+
+function getTenureTierBadge(months) {
+    const m = parseFloat(months) || 0;
+    if (m >= 24) {
+        return '<span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-weight: 700;">🌟 Lão làng (≥ 2 năm)</span>';
+    } else if (m >= 12) {
+        return '<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 700;">💎 Nòng cốt (1–2 năm)</span>';
+    } else if (m >= 6) {
+        return '<span class="badge" style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-weight: 600;">🚀 Vững vàng (6T–1N)</span>';
+    } else {
+        return '<span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">🌱 Thử việc / Mới (< 6T)</span>';
+    }
+}
+
+function openSeniorityModal() {
+    openModal("seniority-modal");
+    renderSeniorityModalTable();
+}
+
+function renderSeniorityModalTable() {
+    const tbody = document.getElementById("seniority-table-body");
+    if (!tbody) return;
+
+    // Lấy toàn bộ nhân viên đang làm việc (active)
+    const activeEmployees = AppState.employees.filter(e => e.status === "active" || (!e.endDate && e.status !== "retired"));
+
+    const statTotalEl = document.getElementById("seniority-stat-total");
+    if (statTotalEl) statTotalEl.textContent = `${activeEmployees.length} nhân sự`;
+
+    // Sắp xếp theo thứ tự lớn xuống thấp
+    activeEmployees.sort((a, b) => {
+        const tA = parseFloat(a.tenureMonths) || 0;
+        const tB = parseFloat(b.tenureMonths) || 0;
+        if (tB !== tA) return tB - tA;
+        return (a.startDate || "").localeCompare(b.startDate || "");
+    });
+
+    const searchVal = (document.getElementById("seniority-search")?.value || "").toLowerCase().trim();
+    const branchVal = document.getElementById("seniority-branch-filter")?.value || "all";
+
+    const filtered = activeEmployees.filter((e, idx) => {
+        // Lưu thứ hạng tổng thể trước khi lọc
+        e._overallRank = idx + 1;
+        if (branchVal !== "all" && e.branch !== branchVal) return false;
+        if (searchVal) {
+            const matchName = (e.name || "").toLowerCase().includes(searchVal);
+            const matchCode = (e.code || "").toLowerCase().includes(searchVal);
+            if (!matchName && !matchCode) return false;
+        }
+        return true;
+    });
+
+    tbody.innerHTML = "";
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center" style="padding: 2rem; color: var(--text-muted);">Không tìm thấy nhân viên phù hợp</td></tr>`;
+        return;
+    }
+
+    filtered.forEach((emp) => {
+        const rank = emp._overallRank;
+        let rankBadge = `<span style="font-weight: 700; color: #64748b;">#${rank}</span>`;
+        if (rank === 1) rankBadge = `<span style="font-size: 1.25rem;" title="Hạng 1 - Quán quân">🥇</span> <strong style="color: #b45309;">Top 1</strong>`;
+        else if (rank === 2) rankBadge = `<span style="font-size: 1.25rem;" title="Hạng 2 - Á quân">🥈</span> <strong style="color: #475569;">Top 2</strong>`;
+        else if (rank === 3) rankBadge = `<span style="font-size: 1.25rem;" title="Hạng 3 - Quý quân">🥉</span> <strong style="color: #92400e;">Top 3</strong>`;
+        else if (rank <= 10) rankBadge = `<span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 700;">Top ${rank}</span>`;
+
+        const branchClass = emp.branch === "CS1" ? "badge-cs1" : (emp.branch === "CS2" ? "badge-cs2" : "badge-cs3");
+        const tenureMonths = parseFloat(emp.tenureMonths) || 0;
+        const tenureText = formatTenureText(tenureMonths);
+        const tierBadge = getTenureTierBadge(tenureMonths);
+
+        const tr = document.createElement("tr");
+        if (rank <= 3) tr.style.background = "rgba(254, 243, 199, 0.25)";
+        tr.innerHTML = `
+            <td class="text-center" style="white-space: nowrap;">${rankBadge}</td>
+            <td><span class="badge ${branchClass}">${emp.branch || 'CS1'}</span></td>
+            <td>
+                <div style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">${emp.name}</div>
+                <div style="font-size: 0.75rem; color: #64748b;">ĐT: ${emp.phone || '-'}</div>
+            </td>
+            <td><code style="font-weight: 600; color: #4f46e5; background: #eef2ff; padding: 2px 6px; border-radius: 4px;">${emp.code}</code></td>
+            <td><span style="font-family: monospace; font-size: 0.85rem;">${emp.startDate || '-'}</span></td>
+            <td class="text-right" style="font-weight: 800; font-size: 1rem; color: #0284c7;">
+                ${tenureMonths.toFixed(1)} tháng
+            </td>
+            <td style="font-weight: 600; color: #334155;">${tenureText}</td>
+            <td class="text-right" style="font-weight: 700; color: var(--primary);">
+                ${formatVND(emp.hourlyWage)}/h
+            </td>
+            <td>${tierBadge}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function exportSeniorityToExcel() {
+    if (typeof XLSX === "undefined") {
+        showToast("Lỗi: Thư viện XLSX chưa tải xong!", "error");
+        return;
+    }
+
+    const activeEmployees = AppState.employees.filter(e => e.status === "active" || (!e.endDate && e.status !== "retired"));
+    activeEmployees.sort((a, b) => {
+        const tA = parseFloat(a.tenureMonths) || 0;
+        const tB = parseFloat(b.tenureMonths) || 0;
+        if (tB !== tA) return tB - tA;
+        return (a.startDate || "").localeCompare(b.startDate || "");
+    });
+
+    const rows = [
+        ["BẢNG TỔNG HỢP & XẾP HẠNG THÂM NIÊN NHÂN VIÊN COCOMEO SALARY STAFF", "", "", "", "", "", "", "", "", "", "", "", ""],
+        ["(Sắp xếp theo thứ tự thâm niên từ lớn xuống thấp - Nhân viên đang làm việc)", "", "", "", "", "", "", "", "", "", "", "", ""],
+        ["Ngày xuất dữ liệu: " + new Date().toLocaleDateString("vi-VN"), "", "", "", "", "", "", "", "", "", "", "", ""],
+        [""],
+        ["Thứ hạng", "Cơ sở", "Họ và tên", "Mã nhân viên", "Ngày vào làm", "Thâm niên (Tháng)", "Quy đổi Thời gian", "Mức lương/giờ", "Số điện thoại", "Ngân hàng", "Số tài khoản", "Tên chủ thẻ", "Phân nhóm thâm niên"]
+    ];
+
+    activeEmployees.forEach((e, idx) => {
+        const m = parseFloat(e.tenureMonths) || 0;
+        let tier = "Thử việc / Mới (< 6 tháng)";
+        if (m >= 24) tier = "Lão làng (≥ 2 năm)";
+        else if (m >= 12) tier = "Nòng cốt (1–2 năm)";
+        else if (m >= 6) tier = "Vững vàng (6T–1N)";
+
+        rows.push([
+            idx + 1,
+            e.branch || "CS1",
+            e.name,
+            e.code,
+            e.startDate || "",
+            m,
+            formatTenureText(m),
+            e.hourlyWage || 0,
+            e.phone || "",
+            e.bankName || "",
+            e.bankAccount || "",
+            e.accountHolder || "",
+            tier
+        ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "BangThamNien");
+    XLSX.writeFile(wb, "Cocomeo_Bang_Tham_Nien_Nhan_Vien.xlsx");
+    showToast("🎉 Đã tải file Excel Bảng Thâm Niên thành công!", "success");
 }
 
 // ==========================================================================
